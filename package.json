@@ -16,7 +16,9 @@
     "discord.js": "^14.24.0",
     "dotenv": "^17.2.1",
     "ffmpeg-static": "^5.2.0",
-    "tweetnacl": "^1.0.3"
-    "yt-dlp-exec": "^1.0.0"
+    "tweetnacl": "^1.0.3",
+    "yt-dlp-exec": "^1.0.0",
+    "distube": "^5.0.0",
+    "libsodium-wrappers": "^0.7.0"
     }
   }
