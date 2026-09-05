@@ -146,8 +146,8 @@ client.on("interactionCreate", async interaction => {
         {
           nodeOptions: {
             metadata: interaction,
-            leaveOnEnd: false,
-            leaveOnEmpty: false,
+            leaveOnEnd: true,
+            leaveOnEmpty: true,
             leaveOnEmptyCooldown: 300000
           }
         }
