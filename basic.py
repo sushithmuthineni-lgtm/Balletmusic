@@ -2,7 +2,7 @@
 
 ## `package.json`
 
-```json
+``json
 {
   "name": "ballet",
   "version": "1.0.0",
