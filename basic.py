@@ -33,7 +33,7 @@ CLIENT_ID=1545677744187252756
 require("dotenv").config();
 
 const 
-  Client,
+  client,
   GatewayIntentBits,
   REST,
   Routes,
