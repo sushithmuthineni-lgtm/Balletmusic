@@ -2,6 +2,7 @@ discord.py
 humanfriendly
 numpy
 pillow
+ffmpeg-static
 requests
 gtts
 
