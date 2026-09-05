@@ -95,8 +95,8 @@ client.on("interactionCreate", async interaction => {
       const { track } = await mainPlayer.play(voiceChannel, query, {
         nodeOptions: {
           metadata: interaction,
-          leaveOnEnd: true,
-          leaveOnEmpty: true,
+          leaveOnEnd: false,
+          leaveOnEmpty: false,
           leaveOnEmptyCooldown: 300000
         }
       });
