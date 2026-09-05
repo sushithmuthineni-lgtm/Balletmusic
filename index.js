@@ -1,4 +1,5 @@
 require("dotenv").config();
+require("dotenv").config();
 
 const {
   Client,
@@ -12,6 +13,23 @@ const {
   Player,
   useMainPlayer,
   useQueue
+} = require("discord-player");
+
+const {
+  DefaultExtractors
+} = require("@discord-player/extractor");
+
+const { YoutubeiExtractor } = require("discord-player-youtubei");
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates
+  ]
+});
+
+const player = new Player(client);
+player.extractors.register(YoutubeiExtractor, {});
 } = require("discord-player");
 
 const {
