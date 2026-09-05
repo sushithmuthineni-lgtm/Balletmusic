@@ -1,8 +1,8 @@
 discord-extractor
-discord-player"
-discord.js"
-dotenv"
-ffmpeg-static"
+discord-player
+discord.js
+dotenv
+ffmpeg-static
 tweetnacl
 "engines": {
   "node": "20.x"
