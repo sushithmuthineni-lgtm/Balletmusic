@@ -1,10 +1,10 @@
-# VG Music Bot — Railway
+# ballet — Railway
 
 ## `package.json`
 
 ```json
 {
-  "name": "vg-music-bot",
+  "name": "ballet",
   "version": "1.0.0",
   "description": "Discord music bot for Railway",
   "main": "index.js",
@@ -125,7 +125,7 @@ async function registerCommands() {
 // -----------------------------
 
 client.once("ready", async () => {
-  console.log(`🎵 Logged in as ${client.user.tag}`);
+  console.log(` Logged in as ${client.user.tag}`);
 
   await player.extractors.loadMulti(DefaultExtractors);
 
