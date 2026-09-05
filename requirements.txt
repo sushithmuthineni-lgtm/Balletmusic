@@ -1,5 +1,5 @@
 discord.js
-dotenv": "^17.2.1",
+dotenv"
 ffmpeg-static
 discord.py
 PyNaCl
