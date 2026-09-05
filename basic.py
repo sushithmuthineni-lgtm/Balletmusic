@@ -29,7 +29,7 @@ CLIENT_ID=1545677744187252756
 
 ## `index.js`
 
-"js
+"json"
 require("dotenv").config();
 
 const {
