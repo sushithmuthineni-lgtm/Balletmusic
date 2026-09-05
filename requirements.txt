@@ -1,5 +1,5 @@
 discord.js
-dotenv"
+dotenv
 ffmpeg-static
 discord.py
 PyNaCl
