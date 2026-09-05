@@ -1,9 +1,20 @@
-discord-extractor
-discord-player
-discord.js
-dotenv
-ffmpeg-static
-tweetnacl
-"engines": {
-  "node": "20.x"
+{
+  "name": "balletmusic",
+  "version": "1.0.0",
+  "description": "Discord music bot for Railway",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "@discord-player/extractor": "^7.0.0",
+    "discord-player": "^7.1.0",
+    "discord.js": "^14.24.0",
+    "dotenv": "^17.2.1",
+    "ffmpeg-static": "^5.2.0",
+    "tweetnacl": "^1.0.3"
+  }
 }
