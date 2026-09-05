@@ -179,7 +179,7 @@ client.on("interactionCreate", async interaction => {
       );
 
       return interaction.followUp(
-        `🎵 Added **${track.title}** to the queue.`
+        ` Added **${track.title}** to the queue.`
       );
 
     } catch (error) {
@@ -307,7 +307,7 @@ client.on("interactionCreate", async interaction => {
       .join("\n");
 
     return interaction.reply(
-      `🎵 **Queue**\n\n${list}`
+      ` **Queue**\n\n${list}`
     );
   }
 
@@ -325,7 +325,7 @@ client.on("interactionCreate", async interaction => {
     }
 
     return interaction.reply(
-      `🎵 **Now Playing:** ${queue.currentTrack.title}`
+      ` **Now Playing:** ${queue.currentTrack.title}`
     );
   }
 });
