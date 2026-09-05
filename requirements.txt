@@ -1,6 +1,5 @@
 discord.py
 discord-player
-python-dotenv
 humanfriendly
 numpy
 pillow
