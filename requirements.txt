@@ -1,11 +1,9 @@
 discord.py
 discord-player
-discord.js
-dotenv
+python-dotenv
 humanfriendly
 numpy
 pillow
-ffmpeg-static
 requests
 gtts
 
