@@ -1,1 +1,1 @@
-web: python basic.py
+worker: node index.js
