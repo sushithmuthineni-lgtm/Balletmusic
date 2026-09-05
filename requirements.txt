@@ -1,5 +1,4 @@
 discord.py
-discord-player/extractor
 discord-player
 discord.js
 dotenv
