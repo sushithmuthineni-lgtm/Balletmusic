@@ -32,7 +32,7 @@ CLIENT_ID=1545677744187252756
 "json"
 require("dotenv").config();
 
-const {
+const 
   Client,
   GatewayIntentBits,
   REST,
