@@ -4,3 +4,4 @@ discord-player
 dotenv
 ffmpeg-static
 tweetnacl
+@discordjs/opus
