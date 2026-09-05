@@ -1,4 +1,4 @@
 FFmpeg
 discord.py
 PyNaCl
- yt_dlp
+yt_dlp
