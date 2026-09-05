@@ -33,10 +33,6 @@ const client = new Client({
 
 const player = new Player(client);
 
-(async () => {
-  await player.extractors.register(YoutubeiExtractor, {});
-  console.log("✅ Extractors loaded");
-})();
 // -----------------------------
 // SLASH COMMANDS
 // -----------------------------
@@ -104,9 +100,12 @@ async function registerCommands() {
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
+  await player.extractors.register(YoutubeiExtractor, {});
   await player.extractors.loadMulti(DefaultExtractors);
 
-  console.log("🎶 Music extractors loaded");
+  console.log(
+    `🎶 Music extractors loaded: ${player.extractors.store.size} registered`
+  );
 });
 
 // -----------------------------
