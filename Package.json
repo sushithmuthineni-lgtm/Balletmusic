@@ -1,4 +1,6 @@
-FFmpeg
-discord.py
-PyNaCl
-yt_dlp
+discord.js
+discord-player
+@discord-player/extractor
+dotenv
+ffmpeg-static
+tweetnacl
