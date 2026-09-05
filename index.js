@@ -32,8 +32,11 @@ const client = new Client({
 });
 
 const player = new Player(client);
-player.extractors.register(YoutubeiExtractor, {});
 
+(async () => {
+  await player.extractors.register(YoutubeiExtractor, {});
+  console.log("✅ Extractors loaded");
+})();
 // -----------------------------
 // SLASH COMMANDS
 // -----------------------------
