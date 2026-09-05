@@ -1,10 +1,10 @@
-# VG Music Bot — Railway
+# ballet — Railway
 
 ## `package.json`
 
 ```json
 {
-  "name": "vg-music-bot",
+  "name": "ballet",
   "version": "1.0.0",
   "description": "Discord music bot for Railway",
   "main": "index.js",
@@ -23,10 +23,6 @@
 
 ## `.env`
 
-```env
-DISCORD_TOKEN=YOUR_BOT_TOKEN
-CLIENT_ID=YOUR_BOT_CLIENT_ID
-```
 
 ## `index.js`
 
