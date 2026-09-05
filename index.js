@@ -9,6 +9,15 @@ const {
 } = require("discord.js");
 
 const {
+  joinVoiceChannel,
+  VoiceConnectionStatus,
+  entersState,
+  createAudioPlayer,
+  createAudioResource,
+  AudioPlayerStatus
+} = require("@discordjs/voice");
+
+const {
   Player,
   useMainPlayer,
   useQueue
