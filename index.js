@@ -35,6 +35,121 @@ client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
+// Shared logic used by both the !prefix commands and the /slash commands
+async function handlePlay(voiceChannel, query, textChannel) {
+  if (!query) throw new Error('Give me a song name, YouTube link, or Spotify link.');
+  if (!voiceChannel) throw new Error('Join a voice channel first.');
+
+  const { track } = await player.play(voiceChannel, query, {
+    nodeOptions: {
+      metadata: { channel: textChannel },
+      leaveOnEmpty: true,
+      leaveOnEmptyCooldown: 60000,
+      leaveOnEnd: true,
+      leaveOnEndCooldown: 60000,
+    },
+  });
+
+  return track;
+}
+
+function handleSkip(guildId) {
+  const queue = player.nodes.get(guildId);
+  if (!queue || !queue.isPlaying()) throw new Error('Nothing is playing.');
+  queue.node.skip();
+}
+
+function handleStop(guildId) {
+  const queue = player.nodes.get(guildId);
+  if (!queue) throw new Error('Nothing is playing.');
+  queue.delete();
+}
+
+function handlePause(guildId) {
+  const queue = player.nodes.get(guildId);
+  if (!queue || !queue.isPlaying()) throw new Error('Nothing is playing.');
+  queue.node.setPaused(true);
+}
+
+function handleResume(guildId) {
+  const queue = player.nodes.get(guildId);
+  if (!queue) throw new Error('Nothing is playing.');
+  queue.node.setPaused(false);
+}
+
+function buildQueueEmbed(guildId) {
+  const queue = player.nodes.get(guildId);
+  if (!queue || queue.tracks.data.length === 0) throw new Error('The queue is empty.');
+  const list = queue.tracks.data
+    .slice(0, 10)
+    .map((t, i) => `${i + 1}. ${t.title}`)
+    .join('\n');
+  return new EmbedBuilder()
+    .setTitle('Queue')
+    .setDescription(`Now playing: **${queue.currentTrack?.title || 'N/A'}**\n\n${list}`);
+}
+
+function handleVolume(guildId, vol) {
+  const queue = player.nodes.get(guildId);
+  if (!queue) throw new Error('Nothing is playing.');
+  if (isNaN(vol) || vol < 0 || vol > 100) throw new Error('Give a volume between 0 and 100.');
+  queue.node.setVolume(vol);
+}
+
+function buildNowPlayingEmbed(guildId) {
+  const queue = player.nodes.get(guildId);
+  if (!queue || !queue.currentTrack) throw new Error('Nothing is playing.');
+  return new EmbedBuilder()
+    .setTitle('Now Playing')
+    .setDescription(`**${queue.currentTrack.title}**`)
+    .setThumbnail(queue.currentTrack.thumbnail || null);
+}
+
+// Slash commands
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const voiceChannel = interaction.member?.voice?.channel;
+
+  try {
+    if (interaction.commandName === 'play') {
+      await interaction.deferReply();
+      const query = interaction.options.getString('query', true);
+      const track = await handlePlay(voiceChannel, query, interaction.channel);
+      await interaction.editReply(`Queued: **${track.title}**`);
+    } else if (interaction.commandName === 'skip') {
+      handleSkip(interaction.guildId);
+      await interaction.reply('Skipped.');
+    } else if (interaction.commandName === 'stop') {
+      handleStop(interaction.guildId);
+      await interaction.reply('Stopped and cleared the queue.');
+    } else if (interaction.commandName === 'pause') {
+      handlePause(interaction.guildId);
+      await interaction.reply('Paused.');
+    } else if (interaction.commandName === 'resume') {
+      handleResume(interaction.guildId);
+      await interaction.reply('Resumed.');
+    } else if (interaction.commandName === 'queue') {
+      const embed = buildQueueEmbed(interaction.guildId);
+      await interaction.reply({ embeds: [embed] });
+    } else if (interaction.commandName === 'volume') {
+      const level = interaction.options.getInteger('level', true);
+      handleVolume(interaction.guildId, level);
+      await interaction.reply(`Volume set to ${level}%.`);
+    } else if (interaction.commandName === 'nowplaying') {
+      const embed = buildNowPlayingEmbed(interaction.guildId);
+      await interaction.reply({ embeds: [embed] });
+    }
+  } catch (err) {
+    const msg = err.message || 'Something went wrong with that command.';
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply(msg);
+    } else {
+      await interaction.reply({ content: msg, ephemeral: true });
+    }
+  }
+});
+
 client.on('messageCreate', async (message) => {
   if (message.author.bot || !message.guild) return;
   if (!message.content.startsWith(PREFIX)) return;
@@ -135,3 +250,4 @@ player.events.on('playerError', (queue, error) => {
 });
 
 client.login(TOKEN);
+      
