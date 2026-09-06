@@ -1,409 +1,137 @@
-# ballet — Railway
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Player } = require('discord-player');
+const { YoutubeiExtractor } = require('discord-player-youtubei');
 
-## `package.json`
+const TOKEN = process.env.DISCORD_TOKEN;
+const PREFIX = process.env.PREFIX || '!';
 
-```json
-{
-  "name": "ballet",
-  "version": "1.0.0",
-  "description": "Discord music bot for Railway",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "dependencies": {
-    "@discord-player/extractor": "^7.0.0",
-    "discord-player": "^7.1.0",
-    "discord.js": "^14.24.0",
-    "dotenv": "^17.2.1",
-    "ffmpeg-static": "^5.2.0"
-  }
+if (!TOKEN) {
+  console.error('Missing DISCORD_TOKEN environment variable. Set it in your Railway service variables.');
+  process.exit(1);
 }
-```
-
-## `.env`
-
-```env
-DISCORD_TOKEN=YOUR_BOT_TOKEN
-CLIENT_ID=YOUR_BOT_CLIENT_ID
-```
-
-## `index.js`
-
-```js
-require("dotenv").config();
-
-const {
-  Client,
-  GatewayIntentBits,
-  REST,
-  Routes,
-  SlashCommandBuilder
-} = require("discord.js");
-
-const {
-  Player,
-  useMainPlayer,
-  useQueue
-} = require("discord-player");
-
-const {
-  DefaultExtractors
-} = require("@discord-player/extractor");
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildVoiceStates
-  ]
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
+// discord-player handles queueing, voice connections, and pulling audio
+// from YouTube, Spotify (resolved via YouTube), SoundCloud, etc.
 const player = new Player(client);
 
-// -----------------------------
-// SLASH COMMANDS
-// -----------------------------
-
-const commands = [
-  new SlashCommandBuilder()
-    .setName("play")
-    .setDescription("Play music")
-    .addStringOption(option =>
-      option
-        .setName("query")
-        .setDescription("Song name or supported music URL")
-        .setRequired(true)
-    ),
-
-  new SlashCommandBuilder()
-    .setName("pause")
-    .setDescription("Pause the music"),
-
-  new SlashCommandBuilder()
-    .setName("resume")
-    .setDescription("Resume the music"),
-
-  new SlashCommandBuilder()
-    .setName("skip")
-    .setDescription("Skip the current song"),
-
-  new SlashCommandBuilder()
-    .setName("stop")
-    .setDescription("Stop music and clear queue"),
-
-  new SlashCommandBuilder()
-    .setName("queue")
-    .setDescription("Show the music queue"),
-
-  new SlashCommandBuilder()
-    .setName("nowplaying")
-    .setDescription("Show the current song")
-].map(command => command.toJSON());
-
-// -----------------------------
-// REGISTER COMMANDS
-// -----------------------------
-
-const rest = new REST({ version: "10" })
-  .setToken(process.env.DISCORD_TOKEN);
-
-async function registerCommands() {
-  try {
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands }
-    );
-
-    console.log("✅ Slash commands registered");
-  } catch (error) {
-    console.error("Command registration error:", error);
-  }
+async function setupPlayer() {
+  // YoutubeiExtractor gives reliable YouTube playback (Spotify links get
+  // resolved to matching YouTube tracks automatically by discord-player).
+  await player.extractors.register(YoutubeiExtractor, {});
+  await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
 }
 
-// -----------------------------
-// READY
-// -----------------------------
-
-client.once("ready", async () => {
-  console.log(`🎵 Logged in as ${client.user.tag}`);
-
-  await player.extractors.loadMulti(DefaultExtractors);
-
-  console.log("🎶 Music extractors loaded");
+client.once('ready', async () => {
+  await setupPlayer();
+  console.log(`Logged in as ${client.user.tag}`);
 });
 
-// -----------------------------
-// COMMAND HANDLER
-// -----------------------------
+client.on('messageCreate', async (message) => {
+  if (message.author.bot || !message.guild) return;
+  if (!message.content.startsWith(PREFIX)) return;
 
-client.on("interactionCreate", async interaction => {
-  if (!interaction.isChatInputCommand()) return;
+  const args = message.content.slice(PREFIX.length).trim().split(/\s+/);
+  const command = args.shift().toLowerCase();
 
-  const command = interaction.commandName;
+  const voiceChannel = message.member?.voice?.channel;
 
-  // ---------------------------
-  // PLAY
-  // ---------------------------
+  try {
+    if (command === 'play' || command === 'p') {
+      const query = args.join(' ');
+      if (!query) return message.reply('Give me a song name, YouTube link, or Spotify link.');
+      if (!voiceChannel) return message.reply('Join a voice channel first.');
 
-  if (command === "play") {
-    const voiceChannel = interaction.member.voice.channel;
+      const { track } = await player.play(voiceChannel, query, {
+        nodeOptions: {
+          metadata: { channel: message.channel },
+          leaveOnEmpty: true,
+          leaveOnEmptyCooldown: 60000,
+          leaveOnEnd: true,
+          leaveOnEndCooldown: 60000,
+        },
+      });
 
-    if (!voiceChannel) {
-      return interaction.reply(
-        "❌ Join a voice channel first."
+      message.reply(`Queued: **${track.title}**`);
+    } else if (command === 'skip') {
+      const queue = player.nodes.get(message.guild.id);
+      if (!queue || !queue.isPlaying()) return message.reply('Nothing is playing.');
+      queue.node.skip();
+      message.reply('Skipped.');
+    } else if (command === 'stop') {
+      const queue = player.nodes.get(message.guild.id);
+      if (!queue) return message.reply('Nothing is playing.');
+      queue.delete();
+      message.reply('Stopped and cleared the queue.');
+    } else if (command === 'pause') {
+      const queue = player.nodes.get(message.guild.id);
+      if (!queue || !queue.isPlaying()) return message.reply('Nothing is playing.');
+      queue.node.setPaused(true);
+      message.reply('Paused.');
+    } else if (command === 'resume') {
+      const queue = player.nodes.get(message.guild.id);
+      if (!queue) return message.reply('Nothing is playing.');
+      queue.node.setPaused(false);
+      message.reply('Resumed.');
+    } else if (command === 'queue' || command === 'q') {
+      const queue = player.nodes.get(message.guild.id);
+      if (!queue || queue.tracks.data.length === 0) {
+        return message.reply('The queue is empty.');
+      }
+      const list = queue.tracks.data
+        .slice(0, 10)
+        .map((t, i) => `${i + 1}. ${t.title}`)
+        .join('\n');
+      const embed = new EmbedBuilder()
+        .setTitle('Queue')
+        .setDescription(`Now playing: **${queue.currentTrack?.title || 'N/A'}**\n\n${list}`);
+      message.reply({ embeds: [embed] });
+    } else if (command === 'volume' || command === 'vol') {
+      const queue = player.nodes.get(message.guild.id);
+      if (!queue) return message.reply('Nothing is playing.');
+      const vol = parseInt(args[0], 10);
+      if (isNaN(vol) || vol < 0 || vol > 100) return message.reply('Give a volume between 0 and 100.');
+      queue.node.setVolume(vol);
+      message.reply(`Volume set to ${vol}%.`);
+    } else if (command === 'help') {
+      message.reply(
+        `**Commands** (prefix \`${PREFIX}\`)\n` +
+          `\`play <song/YouTube/Spotify link>\` - play or queue a track\n` +
+          `\`skip\` - skip current track\n` +
+          `\`stop\` - stop and clear queue\n` +
+          `\`pause\` / \`resume\`\n` +
+          `\`queue\` - show upcoming tracks\n` +
+          `\`volume <0-100>\``
       );
     }
-
-    const query = interaction.options.getString(
-      "query",
-      true
-    );
-
-    await interaction.deferReply();
-
-    try {
-      const mainPlayer = useMainPlayer();
-
-      const { track } = await mainPlayer.play(
-        voiceChannel,
-        query,
-        {
-          nodeOptions: {
-            metadata: interaction,
-
-            leaveOnEnd: true,
-            leaveOnEmpty: true,
-            leaveOnEmptyCooldown: 300000
-          }
-        }
-      );
-
-      return interaction.followUp(
-        `🎵 Added **${track.title}** to the queue.`
-      );
-
-    } catch (error) {
-      console.error(error);
-
-      return interaction.followUp(
-        "❌ I couldn't play that track."
-      );
-    }
-  }
-
-  // ---------------------------
-  // PAUSE
-  // ---------------------------
-
-  if (command === "pause") {
-    const queue = useQueue(interaction.guild.id);
-
-    if (!queue || !queue.isPlaying()) {
-      return interaction.reply(
-        "❌ Nothing is playing."
-      );
-    }
-
-    queue.node.pause();
-
-    return interaction.reply(
-      "⏸️ Music paused."
-    );
-  }
-
-  // ---------------------------
-  // RESUME
-  // ---------------------------
-
-  if (command === "resume") {
-    const queue = useQueue(interaction.guild.id);
-
-    if (!queue) {
-      return interaction.reply(
-        "❌ Nothing is playing."
-      );
-    }
-
-    queue.node.resume();
-
-    return interaction.reply(
-      "▶️ Music resumed."
-    );
-  }
-
-  // ---------------------------
-  // SKIP
-  // ---------------------------
-
-  if (command === "skip") {
-    const queue = useQueue(interaction.guild.id);
-
-    if (!queue || !queue.isPlaying()) {
-      return interaction.reply(
-        "❌ Nothing is playing."
-      );
-    }
-
-    const skipped = queue.node.skip();
-
-    if (!skipped) {
-      return interaction.reply(
-        "❌ Couldn't skip the track."
-      );
-    }
-
-    return interaction.reply(
-      "⏭️ Skipped."
-    );
-  }
-
-  // ---------------------------
-  // STOP
-  // ---------------------------
-
-  if (command === "stop") {
-    const queue = useQueue(interaction.guild.id);
-
-    if (!queue) {
-      return interaction.reply(
-        "❌ Nothing is playing."
-      );
-    }
-
-    queue.delete();
-
-    return interaction.reply(
-      "⏹️ Music stopped and queue cleared."
-    );
-  }
-
-  // ---------------------------
-  // QUEUE
-  // ---------------------------
-
-  if (command === "queue") {
-    const queue = useQueue(interaction.guild.id);
-
-    if (!queue || !queue.isPlaying()) {
-      return interaction.reply(
-        "📭 Queue is empty."
-      );
-    }
-
-    const tracks = queue.tracks.toArray();
-
-    if (tracks.length === 0) {
-      return interaction.reply(
-        "📭 No songs are waiting."
-      );
-    }
-
-    const list = tracks
-      .slice(0, 10)
-      .map(
-        (track, index) =>
-          `**${index + 1}.** ${track.title}`
-      )
-      .join("\n");
-
-    return interaction.reply(
-      `🎵 **Queue**\n\n${list}`
-    );
-  }
-
-  // ---------------------------
-  // NOW PLAYING
-  // ---------------------------
-
-  if (command === "nowplaying") {
-    const queue = useQueue(interaction.guild.id);
-
-    if (!queue || !queue.currentTrack) {
-      return interaction.reply(
-        "📭 Nothing is playing."
-      );
-    }
-
-    return interaction.reply(
-      `🎵 **Now Playing:** ${queue.currentTrack.title}`
-    );
+  } catch (err) {
+    console.error(err);
+    message.reply('Something went wrong with that command.');
   }
 });
 
-// -----------------------------
-// PLAYER EVENTS
-// -----------------------------
-
-player.events.on("playerStart", (queue, track) => {
-  const channel = queue.metadata?.channel;
-
-  if (!channel) return;
-
-  channel.send(
-    `🎶 Now playing **${track.title}**`
-  ).catch(() => {});
+player.events.on('playerStart', (queue, track) => {
+  queue.metadata.channel.send(`▶️ Now playing: **${track.title}**`);
 });
 
-player.events.on("error", (queue, error) => {
-  console.error("Player error:", error);
+player.events.on('audioTrackAdd', (queue, track) => {
+  // Skip the "queued" notice for the very first track (handled by the reply above)
 });
 
-player.events.on("playerError", (queue, error) => {
-  console.error("Player error:", error);
+player.events.on('error', (queue, error) => {
+  console.error('Player error:', error);
 });
 
-player.events.on("emptyQueue", queue => {
-  console.log(
-    `📭 Queue ended in ${queue.guild.name}`
-  );
+player.events.on('playerError', (queue, error) => {
+  console.error('Playback error:', error);
 });
 
-// -----------------------------
-// LOGIN
-// -----------------------------
-
-client.login(process.env.DISCORD_TOKEN)
-  .then(() => registerCommands())
-  .catch(console.error);
-```
-
-## Railway
-
-Create a GitHub repository containing:
-
-```text
-vg-music-bot/
-├── index.js
-├── package.json
-└── .env
-```
-
-**Do NOT upload `.env` to GitHub.**
-
-In Railway Variables add:
-
-```text
-DISCORD_TOKEN = your bot token
-CLIENT_ID = your bot application ID
-```
-
-Then Railway runs:
-
-```bash
-npm install
-npm start
-```
-
-## Commands
-
-```text
-/play <song>
-/pause
-/resume
-/skip
-/stop
-/queue
-/nowplaying
-```
-
-The bot needs the Discord permissions required to connect/speak in voice channels. Discord Player's current documentation also requires the `GuildVoiceStates` intent and FFmpeg for media transcoding.
+client.login(TOKEN);
