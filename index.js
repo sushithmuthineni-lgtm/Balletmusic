@@ -1,3 +1,7 @@
+// Must be set before discord-player/prism-media are required, so they pick
+// up the bundled ffmpeg binary instead of failing to find ffmpeg on the system.
+process.env.FFMPEG_PATH = require('ffmpeg-static');
+
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { Player } = require('discord-player');
 const { YoutubeiExtractor } = require('discord-player-youtubei');
@@ -249,5 +253,13 @@ player.events.on('playerError', (queue, error) => {
   console.error('Playback error:', error);
 });
 
+player.events.on('emptyQueue', (queue) => {
+  console.log(`Queue ended for guild ${queue.guild.id}`);
+});
+
+player.events.on('disconnect', (queue) => {
+  console.log(`Disconnected from voice in guild ${queue.guild.id}`);
+});
+
 client.login(TOKEN);
-      
+  
