@@ -1,3 +1,9 @@
+// Force IPv4-first DNS resolution. Some hosts have broken/restricted IPv6
+// routing, which can make voice UDP connections silently time out even
+// though the main gateway connection (which tolerates this better) works.
+const dns = require('node:dns');
+dns.setDefaultResultOrder('ipv4first');
+
 // Must be set before discord-player/prism-media are required, so they pick
 // up the bundled ffmpeg binary instead of failing to find ffmpeg on the system.
 process.env.FFMPEG_PATH = require('ffmpeg-static');
@@ -263,3 +269,4 @@ player.events.on('disconnect', (queue) => {
 
 client.login(TOKEN);
   
+      
