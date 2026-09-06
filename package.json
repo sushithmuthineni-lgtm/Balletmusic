@@ -21,6 +21,7 @@
     "youtube-dl-exec": "latest"
     "@discord-player/extractor": "^7.0.0",
     "discord.js": "^14.24.0",
-    "dotenv": "^17.2.1",
+    "discord-voip": "latest"
+    "dotenv": "^17.2.1"
   }
 }
