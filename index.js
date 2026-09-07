@@ -280,9 +280,8 @@ player.events.on('emptyQueue', (queue) => {
 });
 
 player.events.on('disconnect', (queue) => {
-console.log(Disconnected from voice in 
-guild ${queue.guild.id});
-});
+console.log(Disconnected from voice in guild ${queue.guild.id});
+}); 
 
 client.login(TOKEN);
 
