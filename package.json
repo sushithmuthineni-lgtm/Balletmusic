@@ -1,5 +1,4 @@
-{
-  "name": "ballet-music-bot",
+"name": "ballet-music-bot",
   "version": "1.0.0",
   "description": "Discord music bot supporting YouTube and Spotify",
   "main": "index.js",
@@ -12,7 +11,7 @@
   },
   "dependencies": {
     "discord.js": "^14.15.3",
-    "discord-player": "^6.7.1",
+    "discord-player": "latest",
     "discord-player-youtubei": "latest",
     "youtubei.js": "latest",
     "opusscript": "^0.1.1",
