@@ -1,6 +1,14 @@
 const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first');
 
+// Global crash prevention handlers
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception thrown:', err);
+});
+
 process.env.FFMPEG_PATH = require('ffmpeg-static');
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
@@ -24,21 +32,26 @@ const client = new Client({
   ],
 });
 
+client.on('error', (error) => {
+  console.error('Discord Client Connection Error:', error);
+});
+
 const player = new Player(client);
 
 async function setupPlayer() {
-  // Registers the updated YouTube extractor cleanly
-  await player.extractors.register(YoutubeExtractor, {
-    requestOptions: {
-      headers: {
-        cookie: process.env.YOUTUBE_COOKIE || ""
+  try {
+    await player.extractors.register(YoutubeExtractor, {
+      requestOptions: {
+        headers: {
+          cookie: process.env.YOUTUBE_COOKIE || ""
+        }
       }
-    }
-  });
-  
-  // This registers all other default media extractors
-  await player.extractors.loadDefault();
-  console.log('Audio extractors successfully loaded!');
+    });
+    await player.extractors.loadDefault();
+    console.log('Audio extractors successfully loaded!');
+  } catch (err) {
+    console.error('Failed to load extractors:', err);
+  }
 }
 
 client.once('ready', async () => {
@@ -51,8 +64,6 @@ async function handlePlay(voiceChannel, query, textChannel) {
   if (!voiceChannel) throw new Error('Join a voice channel first.');
 
   const isUrl = query.startsWith('http://') || query.startsWith('https://');
-  
-  // CRITICAL FIX: Directs text queries straight to the youtubeExtractor target
   const fallbackSearchEngine = isUrl ? 'auto' : `ext:${YoutubeExtractor.identifier}`;
 
   const { track } = await player.play(voiceChannel, query, {
@@ -179,8 +190,6 @@ client.on('messageCreate', async (message) => {
       if (!voiceChannel) return message.reply('Join a voice channel first.');
 
       const isUrl = query.startsWith('http://') || query.startsWith('https://');
-      
-      // CRITICAL FIX: Also update the prefix command search parameter target
       const fallbackSearchEngine = isUrl ? 'auto' : `ext:${YoutubeExtractor.identifier}`;
 
       const { track } = await player.play(voiceChannel, query, {
@@ -271,7 +280,8 @@ player.events.on('emptyQueue', (queue) => {
 });
 
 player.events.on('disconnect', (queue) => {
-  console.log(`Disconnected from voice in guild ${queue.guild.id}`);
+console.log(Disconnected from voice in 
+guild ${queue.guild.id});
 });
 
 client.login(TOKEN);
