@@ -20,18 +20,14 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
-});
-
-// Added a top-level error catcher to prevent the bot from crashing on connection errors
-client.on('error', (error) => {
-  console.error('Discord Client Error:', error);
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 const player = new Player(client);
 
 async function setupPlayer() {
+  // Registers the updated YouTube extractor cleanly
   await player.extractors.register(YoutubeExtractor, {
     requestOptions: {
       headers: {
@@ -39,6 +35,8 @@ async function setupPlayer() {
       }
     }
   });
+  
+  // This registers all other default media extractors
   await player.extractors.loadDefault();
   console.log('Audio extractors successfully loaded!');
 }
@@ -53,7 +51,9 @@ async function handlePlay(voiceChannel, query, textChannel) {
   if (!voiceChannel) throw new Error('Join a voice channel first.');
 
   const isUrl = query.startsWith('http://') || query.startsWith('https://');
-  const fallbackSearchEngine = isUrl ? 'auto' : 'youtube';
+  
+  // CRITICAL FIX: Directs text queries straight to the youtubeExtractor target
+  const fallbackSearchEngine = isUrl ? 'auto' : `ext:${YoutubeExtractor.identifier}`;
 
   const { track } = await player.play(voiceChannel, query, {
     nodeOptions: {
@@ -179,7 +179,9 @@ client.on('messageCreate', async (message) => {
       if (!voiceChannel) return message.reply('Join a voice channel first.');
 
       const isUrl = query.startsWith('http://') || query.startsWith('https://');
-      const fallbackSearchEngine = isUrl ? 'auto' : 'youtube';
+      
+      // CRITICAL FIX: Also update the prefix command search parameter target
+      const fallbackSearchEngine = isUrl ? 'auto' : `ext:${YoutubeExtractor.identifier}`;
 
       const { track } = await player.play(voiceChannel, query, {
         nodeOptions: {
@@ -229,7 +231,7 @@ client.on('messageCreate', async (message) => {
     } else if (command === 'volume' || command === 'vol') {
       const queue = player.nodes.get(message.guild.id);
       if (!queue) return message.reply('Nothing is playing.');
-      const vol = parseInt(args, 0);
+      const vol = parseInt(args[0], 10);
       if (isNaN(vol) || vol < 0 || vol > 100) return message.reply('Give a volume between 0 and 100.');
       queue.node.setVolume(vol);
       message.reply(`Volume set to ${vol}%.`);
@@ -273,4 +275,5 @@ player.events.on('disconnect', (queue) => {
 });
 
 client.login(TOKEN);
+
 
