@@ -21,5 +21,6 @@
     "prism-media": "^1.3.5",
     "youtube-dl-exec": "latest",
     "simple-ytdl-core": "latest"
+    "bgutils-js": "latest"
   }
 }
