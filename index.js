@@ -20,8 +20,13 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+    GatewayIntentBits.MessageContent
+  ]
+});
+
+// Added a top-level error catcher to prevent the bot from crashing on connection errors
+client.on('error', (error) => {
+  console.error('Discord Client Error:', error);
 });
 
 const player = new Player(client);
@@ -224,7 +229,7 @@ client.on('messageCreate', async (message) => {
     } else if (command === 'volume' || command === 'vol') {
       const queue = player.nodes.get(message.guild.id);
       if (!queue) return message.reply('Nothing is playing.');
-      const vol = parseInt(args[0], 10);
+      const vol = parseInt(args, 0);
       if (isNaN(vol) || vol < 0 || vol > 100) return message.reply('Give a volume between 0 and 100.');
       queue.node.setVolume(vol);
       message.reply(`Volume set to ${vol}%.`);
@@ -268,3 +273,4 @@ player.events.on('disconnect', (queue) => {
 });
 
 client.login(TOKEN);
+
