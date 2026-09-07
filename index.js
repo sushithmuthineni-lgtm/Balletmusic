@@ -11,7 +11,6 @@ process.env.FFMPEG_PATH = require('ffmpeg-static');
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { Player } = require('discord-player');
 
-
 const TOKEN = process.env.DISCORD_TOKEN;
 const PREFIX = process.env.PREFIX || '!';
 
@@ -34,8 +33,9 @@ const client = new Client({
 const player = new Player(client);
 
 async function setupPlayer() {
-  // This loads all standard extractors like SoundCloud, Spotify, and YouTube
-  await player.extractors.loadDefault();
+    // This loads all standard extractors like SoundCloud, Spotify, and YouTube
+    await player.extractors.loadDefault();
+    console.log('Audio extractors successfully loaded!');
 }
 
 client.once('ready', async () => {
@@ -48,6 +48,10 @@ async function handlePlay(voiceChannel, query, textChannel) {
   if (!query) throw new Error('Give me a song name, YouTube link, or Spotify link.');
   if (!voiceChannel) throw new Error('Join a voice channel first.');
 
+  // If it's a plain word search rather than a URL link, force it to search YouTube
+  const isUrl = query.startsWith('http://') || query.startsWith('https://');
+  const fallbackSearchEngine = isUrl ? 'auto' : 'youtube';
+
   const { track } = await player.play(voiceChannel, query, {
     nodeOptions: {
       metadata: { channel: textChannel },
@@ -56,7 +60,7 @@ async function handlePlay(voiceChannel, query, textChannel) {
       leaveOnEnd: true,
       leaveOnEndCooldown: 60000,
     },
-    searchEngine: 'youtube'
+    searchEngine: fallbackSearchEngine
   });
 
   return track;
@@ -174,6 +178,9 @@ client.on('messageCreate', async (message) => {
       if (!query) return message.reply('Give me a song name, YouTube link, or Spotify link.');
       if (!voiceChannel) return message.reply('Join a voice channel first.');
 
+      const isUrl = query.startsWith('http://') || query.startsWith('https://');
+      const fallbackSearchEngine = isUrl ? 'auto' : 'youtube';
+
       const { track } = await player.play(voiceChannel, query, {
         nodeOptions: {
           metadata: { channel: message.channel },
@@ -182,7 +189,7 @@ client.on('messageCreate', async (message) => {
           leaveOnEnd: true,
           leaveOnEndCooldown: 60000,
         },
-        searchEngine: 'youtube'
+        searchEngine: fallbackSearchEngine
       });
 
       message.reply(`Queued: **${track.title}**`);
@@ -248,7 +255,7 @@ player.events.on('playerStart', (queue, track) => {
 });
 
 player.events.on('audioTrackAdd', (queue, track) => {
-  // Skip the "queued" notice for the very first track
+  // Skip the "queued" notice for the very first track (handled by the reply above)
 });
 
 player.events.on('error', (queue, error) => {
@@ -258,13 +265,14 @@ player.events.on('error', (queue, error) => {
 player.events.on('playerError', (queue, error) => {
   console.error('Playback error:', error);
 });
-
 player.events.on('emptyQueue', (queue) => {
-  console.log(`Queue ended for guild ${queue.guild.id}`);
+console.log(Queue ended for guild 
+${queue.guild.id});
 });
 
 player.events.on('disconnect', (queue) => {
-  console.log(`Disconnected from voice in guild ${queue.guild.id}`);
+console.log(Disconnected from voice in 
+guild ${queue.guild.id});
 });
 
 client.login(TOKEN);
