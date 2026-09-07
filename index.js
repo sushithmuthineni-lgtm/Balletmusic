@@ -1,12 +1,11 @@
 const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first');
 
-// Global crash prevention handlers
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('Unhandled Rejection:', reason);
 });
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception thrown:', err);
+  console.error('Uncaught Exception:', err);
 });
 
 process.env.FFMPEG_PATH = require('ffmpeg-static');
@@ -33,7 +32,7 @@ const client = new Client({
 });
 
 client.on('error', (error) => {
-  console.error('Discord Client Connection Error:', error);
+  console.error('Discord Client Error:', error);
 });
 
 const player = new Player(client);
@@ -48,7 +47,7 @@ async function setupPlayer() {
       }
     });
     await player.extractors.loadDefault();
-    console.log('Audio extractors successfully loaded!');
+    console.log('Audio extractors loaded successfully!');
   } catch (err) {
     console.error('Failed to load extractors:', err);
   }
@@ -166,7 +165,7 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.reply({ embeds: [embed] });
     }
   } catch (err) {
-    const msg = err.message || 'Something went wrong with that command.';
+    const msg = err.message || 'Something went wrong.';
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(msg);
     } else {
@@ -186,7 +185,7 @@ client.on('messageCreate', async (message) => {
   try {
     if (command === 'play' || command === 'p') {
       const query = args.join(' ');
-      if (!query) return message.reply('Give me a song name, YouTube link, or Spotify link.');
+      if (!query) return message.reply('Give me a song name.');
       if (!voiceChannel) return message.reply('Join a voice channel first.');
 
       const isUrl = query.startsWith('http://') || query.startsWith('https://');
@@ -213,7 +212,7 @@ client.on('messageCreate', async (message) => {
       const queue = player.nodes.get(message.guild.id);
       if (!queue) return message.reply('Nothing is playing.');
       queue.delete();
-      message.reply('Stopped and cleared the queue.');
+      message.reply('Stopped.');
     } else if (command === 'pause') {
       const queue = player.nodes.get(message.guild.id);
       if (!queue || !queue.isPlaying()) return message.reply('Nothing is playing.');
@@ -226,16 +225,9 @@ client.on('messageCreate', async (message) => {
       message.reply('Resumed.');
     } else if (command === 'queue' || command === 'q') {
       const queue = player.nodes.get(message.guild.id);
-      if (!queue || queue.tracks.data.length === 0) {
-        return message.reply('The queue is empty.');
-      }
-      const list = queue.tracks.data
-        .slice(0, 10)
-        .map((t, i) => `${i + 1}. ${t.title}`)
-        .join('\n');
-      const embed = new EmbedBuilder()
-        .setTitle('Queue')
-        .setDescription(`Now playing: **${queue.currentTrack?.title || 'N/A'}**\n\n${list}`);
+      if (!queue || queue.tracks.data.length === 0) return message.reply('The queue is empty.');
+      const list = queue.tracks.data.slice(0, 10).map((t, i) => `${i + 1}. ${t.title}`).join('\n');
+      const embed = new EmbedBuilder().setTitle('Queue').setDescription(list);
       message.reply({ embeds: [embed] });
     } else if (command === 'volume' || command === 'vol') {
       const queue = player.nodes.get(message.guild.id);
@@ -244,44 +236,21 @@ client.on('messageCreate', async (message) => {
       if (isNaN(vol) || vol < 0 || vol > 100) return message.reply('Give a volume between 0 and 100.');
       queue.node.setVolume(vol);
       message.reply(`Volume set to ${vol}%.`);
-    } else if (command === 'help') {
-      message.reply(
-        `**Commands** (prefix \`${PREFIX}\`)\n` +
-          `\`play <song/YouTube/Spotify link>\` - play or queue a track\n` +
-          `\`skip\` - skip current track\n` +
-          `\`stop\` - stop and clear queue\n` +
-          `\`pause\` / \`resume\`\n` +
-          `\`queue\` - show upcoming tracks\n` +
-          `\`volume <0-100>\``
-      );
     }
   } catch (err) {
     console.error(err);
-    message.reply('Something went wrong with that command.');
+    message.reply('Something went wrong.');
   }
 });
 
 player.events.on('playerStart', (queue, track) => {
-  queue.metadata.channel.send(`Now playing: **${track.title}**`);
+  try { queue.metadata.channel.send(`Now playing: **${track.title}**`); } catch (e) {}
 });
-
-player.events.on('audioTrackAdd', (queue, track) => {});
-
-player.events.on('error', (queue, error) => {
-  console.error('Player error:', error);
-});
-
-player.events.on('playerError', (queue, error) => {
-  console.error('Playback error:', error);
-});
-
-player.events.on('emptyQueue', (queue) => {
-  console.log(`Queue ended for guild ${queue.guild.id}`);
-});
-
-player.events.on('disconnect', (queue) => {
-console.log(Disconnected from voice in guild ${queue.guild.id});
-}); 
+player.events.on('audioTrackAdd', () => {});
+player.events.on('error', (q, e) => console.error(e));
+player.events.on('playerError', (q, e) => console.error(e));
+player.events.on('emptyQueue', () => {});
+player.events.on('disconnect', () => {});
 
 client.login(TOKEN);
 
