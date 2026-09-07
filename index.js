@@ -36,12 +36,10 @@ const player = new Player(client);
 async function setupPlayer() {
   // YoutubeiExtractor gives reliable YouTube playback (Spotify links get
   // resolved to matching YouTube tracks automatically by discord-player).
-  // generateWithPoToken enables YouTube's anti-bot verification token
-  // (via bgutils-js). This is documented to pair with the WEB client -
-  // pairing it with ANDROID (a previous attempt) still got HTTP 400s.
+  // Trying the IOS client: like ANDROID it skips signature decryption,
+  // but has had better luck than ANDROID with some recent YouTube changes.
   await player.extractors.register(YoutubeiExtractor, {
-    generateWithPoToken: true,
-    streamOptions: { useClient: 'WEB' },
+    streamOptions: { useClient: 'IOS' },
   });
   await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
 }
@@ -276,8 +274,4 @@ player.events.on('disconnect', (queue) => {
 client.login(TOKEN);
   
 
-  
-
-
- 
 
