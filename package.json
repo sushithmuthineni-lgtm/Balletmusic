@@ -33,7 +33,7 @@
     "mongoose": "^6.11.6",
     "random-anime": "^1.0.6",
     "sapphire": "^0.0.3",
-    "topgg-autoposter": "^2.0.1
+    "topgg-autoposter": "^2.0.1"
   },
   "overrides": {
     "youtubei.js": "latest"
