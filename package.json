@@ -1,4 +1,5 @@
-"name": "ballet-music-bot",
+{
+  "name": "ballet-music-bot",
   "version": "1.0.0",
   "description": "Discord music bot supporting YouTube and Spotify",
   "main": "index.js",
