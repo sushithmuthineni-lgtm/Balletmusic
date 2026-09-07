@@ -1,0 +1,9 @@
+module.exports = {
+  name: 'raw',
+  execute(d, client) {
+    if (!client.music) return;
+    if (d.t === 'VOICE_STATE_UPDATE' || d.t === 'VOICE_SERVER_UPDATE') {
+      client.music.shoukaku.connections.get(d.d.guild_id)?.raw?.(d);
+    }
+  }
+};
