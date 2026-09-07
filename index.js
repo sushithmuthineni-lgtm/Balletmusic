@@ -34,11 +34,10 @@ const client = new Client({
 const player = new Player(client);
 
 async function setupPlayer() {
-  // YoutubeiExtractor gives reliable YouTube playback (Spotify links get
-  // resolved to matching YouTube tracks automatically by discord-player).
-  await player.extractors.register(YoutubeiExtractor, {});
-  await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
+    // This loads all standard extractors like SoundCloud, Spotify, and YouTube
+    await player.extractors.loadDefault();
 }
+
 
 client.once('ready', async () => {
   await setupPlayer();
