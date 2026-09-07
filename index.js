@@ -10,7 +10,6 @@ process.env.FFMPEG_PATH = require('ffmpeg-static');
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { Player } = require('discord-player');
-const { YoutubeiExtractor } = require('discord-player-youtubei');
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const PREFIX = process.env.PREFIX || '!';
@@ -267,6 +266,7 @@ player.events.on('disconnect', (queue) => {
 });
 
 client.login(TOKEN);
+
   
 
   
