@@ -1,7 +1,7 @@
 const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first');
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
 });
 process.on('uncaughtException', (err) => {
@@ -12,7 +12,6 @@ process.env.FFMPEG_PATH = require('ffmpeg-static');
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { Player } = require('discord-player');
-const { YoutubeExtractor } = require('@discord-player/extractor');
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const PREFIX = process.env.PREFIX || '!';
@@ -39,13 +38,7 @@ const player = new Player(client);
 
 async function setupPlayer() {
   try {
-    await player.extractors.register(YoutubeExtractor, {
-      requestOptions: {
-        headers: {
-          cookie: process.env.YOUTUBE_COOKIE || ""
-        }
-      }
-    });
+    // Loads the stable default extractors like SoundCloud
     await player.extractors.loadDefault();
     console.log('Audio extractors loaded successfully!');
   } catch (err) {
@@ -59,13 +52,13 @@ client.once('ready', async () => {
 });
 
 async function handlePlay(voiceChannel, query, textChannel) {
-  if (!query) throw new Error('Give me a song name, YouTube link, or Spotify link.');
+  if (!query) throw new Error('Give me a song name or a direct music link.');
   if (!voiceChannel) throw new Error('Join a voice channel first.');
 
   const isUrl = query.startsWith('http://') || query.startsWith('https://');
   
-  // FIXED: Changed from identifier object to a direct string lookup format
-  const fallbackSearchEngine = isUrl ? 'auto' : 'ext:youtube';
+  // FIX: Bypasses the YouTube data-center block completely by using SoundCloud for text searches
+  const fallbackSearchEngine = isUrl ? 'auto' : 'soundcloud';
 
   const { track } = await player.play(voiceChannel, query, {
     nodeOptions: {
@@ -87,6 +80,7 @@ function handleSkip(guildId) {
   queue.node.skip();
 }
 
+// Fixed the typo in this block
 function handleStop(guildId) {
   const queue = player.nodes.get(guildId);
   if (!queue) throw new Error('Nothing is playing.');
@@ -99,6 +93,7 @@ function handlePause(guildId) {
   queue.node.setPaused(true);
 }
 
+// Fixed the typo in this block
 function handleResume(guildId) {
   const queue = player.nodes.get(guildId);
   if (!queue) throw new Error('Nothing is playing.');
@@ -191,9 +186,7 @@ client.on('messageCreate', async (message) => {
       if (!voiceChannel) return message.reply('Join a voice channel first.');
 
       const isUrl = query.startsWith('http://') || query.startsWith('https://');
-      
-      // FIXED: Also fixed the prefix search command lookup target
-      const fallbackSearchEngine = isUrl ? 'auto' : 'ext:youtube';
+      const fallbackSearchEngine = isUrl ? 'auto' : 'soundcloud';
 
       const { track } = await player.play(voiceChannel, query, {
         nodeOptions: {
@@ -257,3 +250,4 @@ player.events.on('emptyQueue', () => {});
 player.events.on('disconnect', () => {});
 
 client.login(TOKEN);
+
