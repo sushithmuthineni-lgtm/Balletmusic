@@ -48,7 +48,7 @@ async function handlePlay(voiceChannel, query, textChannel) {
   if (!query) throw new Error('Give me a song name, YouTube link, or Spotify link.');
   if (!voiceChannel) throw new Error('Join a voice channel first.');
 
-    const { track } = await player.play(voiceChannel, query, {
+  const { track } = await player.play(voiceChannel, query, {
     nodeOptions: {
       metadata: { channel: textChannel },
       leaveOnEmpty: true,
@@ -59,6 +59,8 @@ async function handlePlay(voiceChannel, query, textChannel) {
     searchEngine: 'youtube'
   });
 
+  return track;
+}
 
   return track;
 }
