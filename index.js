@@ -33,10 +33,9 @@ const client = new Client({
 const player = new Player(client);
 
 async function setupPlayer() {
-    // This loads all standard extractors like SoundCloud, Spotify, and YouTube
-    await player.extractors.loadDefault();
+  // This loads all standard extractors like SoundCloud, Spotify, and YouTube
+  await player.extractors.loadDefault();
 }
-
 
 client.once('ready', async () => {
   await setupPlayer();
@@ -58,9 +57,6 @@ async function handlePlay(voiceChannel, query, textChannel) {
     },
     searchEngine: 'youtube'
   });
-
-  return track;
-}
 
   return track;
 }
@@ -178,16 +174,15 @@ client.on('messageCreate', async (message) => {
       if (!voiceChannel) return message.reply('Join a voice channel first.');
 
       const { track } = await player.play(voiceChannel, query, {
-  nodeOptions: {
-    metadata: { channel: message.channel },
-    leaveOnEmpty: true,
-    leaveOnEmptyCooldown: 60000,
-    leaveOnEnd: true,
-    leaveOnEndCooldown: 60000,
-  },
-  searchEngine: 'youtube'
-});
-
+        nodeOptions: {
+          metadata: { channel: message.channel },
+          leaveOnEmpty: true,
+          leaveOnEmptyCooldown: 60000,
+          leaveOnEnd: true,
+          leaveOnEndCooldown: 60000,
+        },
+        searchEngine: 'youtube'
+      });
 
       message.reply(`Queued: **${track.title}**`);
     } else if (command === 'skip') {
@@ -252,7 +247,7 @@ player.events.on('playerStart', (queue, track) => {
 });
 
 player.events.on('audioTrackAdd', (queue, track) => {
-  // Skip the "queued" notice for the very first track (handled by the reply above)
+  // Skip the "queued" notice for the very first track
 });
 
 player.events.on('error', (queue, error) => {
@@ -272,6 +267,7 @@ player.events.on('disconnect', (queue) => {
 });
 
 client.login(TOKEN);
+
 
   
 
