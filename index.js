@@ -36,11 +36,7 @@ const player = new Player(client);
 async function setupPlayer() {
   // YoutubeiExtractor gives reliable YouTube playback (Spotify links get
   // resolved to matching YouTube tracks automatically by discord-player).
-  // Trying the IOS client: like ANDROID it skips signature decryption,
-  // but has had better luck than ANDROID with some recent YouTube changes.
-  await player.extractors.register(YoutubeiExtractor, {
-    streamOptions: { useClient: 'IOS' },
-  });
+  await player.extractors.register(YoutubeiExtractor, {});
   await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
 }
 
@@ -272,6 +268,8 @@ player.events.on('disconnect', (queue) => {
 });
 
 client.login(TOKEN);
+  
+
   
 
 
