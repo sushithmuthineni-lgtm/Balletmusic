@@ -63,7 +63,9 @@ async function handlePlay(voiceChannel, query, textChannel) {
   if (!voiceChannel) throw new Error('Join a voice channel first.');
 
   const isUrl = query.startsWith('http://') || query.startsWith('https://');
-  const fallbackSearchEngine = isUrl ? 'auto' : `ext:${YoutubeExtractor.identifier}`;
+  
+  // FIXED: Changed from identifier object to a direct string lookup format
+  const fallbackSearchEngine = isUrl ? 'auto' : 'ext:youtube';
 
   const { track } = await player.play(voiceChannel, query, {
     nodeOptions: {
@@ -189,7 +191,9 @@ client.on('messageCreate', async (message) => {
       if (!voiceChannel) return message.reply('Join a voice channel first.');
 
       const isUrl = query.startsWith('http://') || query.startsWith('https://');
-      const fallbackSearchEngine = isUrl ? 'auto' : `ext:${YoutubeExtractor.identifier}`;
+      
+      // FIXED: Also fixed the prefix search command lookup target
+      const fallbackSearchEngine = isUrl ? 'auto' : 'ext:youtube';
 
       const { track } = await player.play(voiceChannel, query, {
         nodeOptions: {
@@ -232,7 +236,7 @@ client.on('messageCreate', async (message) => {
     } else if (command === 'volume' || command === 'vol') {
       const queue = player.nodes.get(message.guild.id);
       if (!queue) return message.reply('Nothing is playing.');
-      const vol = parseInt(args[0], 10);
+      const vol = parseInt(args, 10);
       if (isNaN(vol) || vol < 0 || vol > 100) return message.reply('Give a volume between 0 and 100.');
       queue.node.setVolume(vol);
       message.reply(`Volume set to ${vol}%.`);
@@ -253,5 +257,3 @@ player.events.on('emptyQueue', () => {});
 player.events.on('disconnect', () => {});
 
 client.login(TOKEN);
-
-
