@@ -36,7 +36,12 @@ const player = new Player(client);
 async function setupPlayer() {
   // YoutubeiExtractor gives reliable YouTube playback (Spotify links get
   // resolved to matching YouTube tracks automatically by discord-player).
-  await player.extractors.register(YoutubeiExtractor, {});
+  // useClient: 'ANDROID' avoids YouTube's signature-cipher requirement
+  // entirely, which sidesteps the "Failed to extract signature decipher"
+  // issue that otherwise blocks format selection.
+  await player.extractors.register(YoutubeiExtractor, {
+    streamOptions: { useClient: 'ANDROID' },
+  });
   await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
 }
 
@@ -269,4 +274,4 @@ player.events.on('disconnect', (queue) => {
 
 client.login(TOKEN);
   
- 
+
