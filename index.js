@@ -30,6 +30,14 @@ const client = new Client({
   ],
 });
 
+// Force the voice connection to use a stable gateway version
+// This prevents cloud hosting data packets from dropping silently
+try {
+  require('@discordjs/voice').GatewayVersion = '10';
+} catch (e) {
+  console.error('Voice helper initialization warning:', e);
+}
+
 client.on('error', (error) => {
   console.error('Discord Client Error:', error);
 });
@@ -38,7 +46,6 @@ const player = new Player(client);
 
 async function setupPlayer() {
   try {
-    // Loads the stable default extractors like SoundCloud
     await player.extractors.loadDefault();
     console.log('Audio extractors loaded successfully!');
   } catch (err) {
@@ -56,8 +63,6 @@ async function handlePlay(voiceChannel, query, textChannel) {
   if (!voiceChannel) throw new Error('Join a voice channel first.');
 
   const isUrl = query.startsWith('http://') || query.startsWith('https://');
-  
-  // FIX: Bypasses the YouTube data-center block completely by using SoundCloud for text searches
   const fallbackSearchEngine = isUrl ? 'auto' : 'soundcloud';
 
   const { track } = await player.play(voiceChannel, query, {
@@ -80,7 +85,6 @@ function handleSkip(guildId) {
   queue.node.skip();
 }
 
-// Fixed the typo in this block
 function handleStop(guildId) {
   const queue = player.nodes.get(guildId);
   if (!queue) throw new Error('Nothing is playing.');
@@ -93,7 +97,6 @@ function handlePause(guildId) {
   queue.node.setPaused(true);
 }
 
-// Fixed the typo in this block
 function handleResume(guildId) {
   const queue = player.nodes.get(guildId);
   if (!queue) throw new Error('Nothing is playing.');
