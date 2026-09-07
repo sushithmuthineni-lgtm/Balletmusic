@@ -1,21 +1,17 @@
-// Force IPv4-first DNS resolution. Some hosts have broken/restricted IPv6
-// routing, which can make voice UDP connections silently time out even
-// though the main gateway connection (which tolerates this better) works.
 const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first');
 
-// Must be set before discord-player/prism-media are required, so they pick
-// up the bundled ffmpeg binary instead of failing to find ffmpeg on the system.
 process.env.FFMPEG_PATH = require('ffmpeg-static');
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { Player } = require('discord-player');
+const { YoutubeExtractor } = require('@discord-player/extractor');
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const PREFIX = process.env.PREFIX || '!';
 
 if (!TOKEN) {
-  console.error('Missing DISCORD_TOKEN environment variable. Set it in your Railway service variables.');
+  console.error('Missing DISCORD_TOKEN environment variable.');
   process.exit(1);
 }
 
@@ -28,14 +24,18 @@ const client = new Client({
   ],
 });
 
-// discord-player handles queueing, voice connections, and pulling audio
-// from YouTube, Spotify (resolved via YouTube), SoundCloud, etc.
 const player = new Player(client);
 
 async function setupPlayer() {
-    // This loads all standard extractors like SoundCloud, Spotify, and YouTube
-    await player.extractors.loadDefault();
-    console.log('Audio extractors successfully loaded!');
+  await player.extractors.register(YoutubeExtractor, {
+    requestOptions: {
+      headers: {
+        cookie: process.env.YOUTUBE_COOKIE || ""
+      }
+    }
+  });
+  await player.extractors.loadDefault();
+  console.log('Audio extractors successfully loaded!');
 }
 
 client.once('ready', async () => {
@@ -43,12 +43,10 @@ client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
-// Shared logic used by both the !prefix commands and the /slash commands
 async function handlePlay(voiceChannel, query, textChannel) {
   if (!query) throw new Error('Give me a song name, YouTube link, or Spotify link.');
   if (!voiceChannel) throw new Error('Join a voice channel first.');
 
-  // If it's a plain word search rather than a URL link, force it to search YouTube
   const isUrl = query.startsWith('http://') || query.startsWith('https://');
   const fallbackSearchEngine = isUrl ? 'auto' : 'youtube';
 
@@ -118,10 +116,8 @@ function buildNowPlayingEmbed(guildId) {
     .setThumbnail(queue.currentTrack.thumbnail || null);
 }
 
-// Slash commands
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
-
   const voiceChannel = interaction.member?.voice?.channel;
 
   try {
@@ -169,7 +165,6 @@ client.on('messageCreate', async (message) => {
 
   const args = message.content.slice(PREFIX.length).trim().split(/\s+/);
   const command = args.shift().toLowerCase();
-
   const voiceChannel = message.member?.voice?.channel;
 
   try {
@@ -251,12 +246,10 @@ client.on('messageCreate', async (message) => {
 });
 
 player.events.on('playerStart', (queue, track) => {
-  queue.metadata.channel.send(`▶️ Now playing: **${track.title}**`);
+  queue.metadata.channel.send(`Now playing: **${track.title}**`);
 });
 
-player.events.on('audioTrackAdd', (queue, track) => {
-  // Skip the "queued" notice for the very first track (handled by the reply above)
-});
+player.events.on('audioTrackAdd', (queue, track) => {});
 
 player.events.on('error', (queue, error) => {
   console.error('Player error:', error);
@@ -265,21 +258,13 @@ player.events.on('error', (queue, error) => {
 player.events.on('playerError', (queue, error) => {
   console.error('Playback error:', error);
 });
+
 player.events.on('emptyQueue', (queue) => {
-console.log(Queue ended for guild 
-${queue.guild.id});
+  console.log(`Queue ended for guild ${queue.guild.id}`);
 });
 
 player.events.on('disconnect', (queue) => {
-console.log(Disconnected from voice in 
-guild ${queue.guild.id});
+  console.log(`Disconnected from voice in guild ${queue.guild.id}`);
 });
 
 client.login(TOKEN);
-
-
-  
-
-  
-
-
