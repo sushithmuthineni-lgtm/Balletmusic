@@ -48,7 +48,7 @@ async function handlePlay(voiceChannel, query, textChannel) {
   if (!query) throw new Error('Give me a song name, YouTube link, or Spotify link.');
   if (!voiceChannel) throw new Error('Join a voice channel first.');
 
-  const { track } = await player.play(voiceChannel, query, {
+    const { track } = await player.play(voiceChannel, query, {
     nodeOptions: {
       metadata: { channel: textChannel },
       leaveOnEmpty: true,
@@ -56,7 +56,9 @@ async function handlePlay(voiceChannel, query, textChannel) {
       leaveOnEnd: true,
       leaveOnEndCooldown: 60000,
     },
+    searchEngine: 'youtube'
   });
+
 
   return track;
 }
@@ -174,14 +176,16 @@ client.on('messageCreate', async (message) => {
       if (!voiceChannel) return message.reply('Join a voice channel first.');
 
       const { track } = await player.play(voiceChannel, query, {
-        nodeOptions: {
-          metadata: { channel: message.channel },
-          leaveOnEmpty: true,
-          leaveOnEmptyCooldown: 60000,
-          leaveOnEnd: true,
-          leaveOnEndCooldown: 60000,
-        },
-      });
+  nodeOptions: {
+    metadata: { channel: message.channel },
+    leaveOnEmpty: true,
+    leaveOnEmptyCooldown: 60000,
+    leaveOnEnd: true,
+    leaveOnEndCooldown: 60000,
+  },
+  searchEngine: 'youtube'
+});
+
 
       message.reply(`Queued: **${track.title}**`);
     } else if (command === 'skip') {
