@@ -35,8 +35,8 @@ module.exports = {
 
     // If YouTube search itself comes back empty (separate failure point from
     // playback-time errors, which are handled in musicManager.js), try SoundCloud.
-    if (!result.tracks.length && !query.startsWith('scsearch:')) {
-      result = await music.search(`scsearch:${query}`, { requester: member.user });
+    if (!result.tracks.length) {
+      result = await music.search(query, { requester: member.user, engine: 'soundcloud' });
     }
 
     if (!result.tracks.length) {
