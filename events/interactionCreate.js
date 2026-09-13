@@ -12,7 +12,13 @@ module.exports = {
       await command.execute(interaction, client);
     } catch (err) {
       console.error(`[Command Error] /${interaction.commandName}:`, err);
-      const payload = { embeds: [errorEmbed('Something went wrong running that command.')], ephemeral: true };
+
+      const isNodeError = err?.message?.includes('No node found') || err?.name === 'KazagumoError';
+      const message = isNodeError
+        ? "I can't reach the music server (Lavalink) right now — the bot owner needs to check its connection."
+        : 'Something went wrong running that command.';
+
+      const payload = { embeds: [errorEmbed(message)], ephemeral: true };
       if (interaction.deferred || interaction.replied) {
         await interaction.followUp(payload).catch(() => {});
       } else {
