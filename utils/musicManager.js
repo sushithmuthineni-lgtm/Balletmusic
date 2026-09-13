@@ -91,12 +91,21 @@ function createMusicManager(client) {
 
   // Track playback exceptions (bad stream, blocked format, etc.) were previously
   // silent — the bot would just report "queue finished" as if nothing went wrong.
-  kazagumo.on('playerException', (player, track, exception) => {
-    console.error(`[Playback Error] guild ${player.guildId}:`, exception?.message || exception);
+  kazagumo.on('playerException', (player, track, payload) => {
+    // Lavalink's exception payload can be nested differently depending on version,
+    // so try every likely shape before giving up.
+    const message =
+      payload?.exception?.message ||
+      payload?.message ||
+      payload?.cause ||
+      payload?.exception?.cause ||
+      JSON.stringify(payload);
+
+    console.error(`[Playback Error] guild ${player.guildId} | track: ${track?.title} | raw:`, JSON.stringify(payload));
     const channel = client.channels.cache.get(player.textId);
     if (channel) {
       channel.send({
-        embeds: [infoEmbed(`⚠️ Playback failed for **${track?.title || 'that track'}**: ${exception?.message || 'unknown error'}`)]
+        embeds: [infoEmbed(`⚠️ Playback failed for **${track?.title || 'that track'}**: ${message}`)]
       }).catch(() => {});
     }
   });
