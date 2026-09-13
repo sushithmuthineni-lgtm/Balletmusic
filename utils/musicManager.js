@@ -39,7 +39,7 @@ function createMusicManager(client) {
       resume: true,
       resumeTimeout: 30,
       reconnectTries: Infinity,   // keep retrying forever instead of giving up
-      reconnectInterval: 10000    // wait 10s between attempts — Lavalink restarts can take 1-2 min to rebuild
+      reconnectInterval: 10       // SECONDS (not ms) — Lavalink restarts can take 1-2 min to rebuild
     }
   );
 
@@ -86,6 +86,26 @@ function createMusicManager(client) {
           infoEmbed(`Now playing **[${track.title}](${track.uri})** \`[${msToTime(track.length)}]\``)
         ]
       }).catch(() => {});
+    }
+  });
+
+  // Track playback exceptions (bad stream, blocked format, etc.) were previously
+  // silent — the bot would just report "queue finished" as if nothing went wrong.
+  kazagumo.on('playerException', (player, track, exception) => {
+    console.error(`[Playback Error] guild ${player.guildId}:`, exception?.message || exception);
+    const channel = client.channels.cache.get(player.textId);
+    if (channel) {
+      channel.send({
+        embeds: [infoEmbed(`⚠️ Playback failed for **${track?.title || 'that track'}**: ${exception?.message || 'unknown error'}`)]
+      }).catch(() => {});
+    }
+  });
+
+  kazagumo.on('playerStuck', (player, track) => {
+    console.error(`[Playback Stuck] guild ${player.guildId}: ${track?.title}`);
+    const channel = client.channels.cache.get(player.textId);
+    if (channel) {
+      channel.send({ embeds: [infoEmbed(`⚠️ Playback got stuck on **${track?.title || 'that track'}** and was skipped.`)] }).catch(() => {});
     }
   });
 
