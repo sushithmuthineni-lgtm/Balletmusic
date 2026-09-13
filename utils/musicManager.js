@@ -91,22 +91,39 @@ function createMusicManager(client) {
 
   // Track playback exceptions (bad stream, blocked format, etc.) were previously
   // silent — the bot would just report "queue finished" as if nothing went wrong.
-  kazagumo.on('playerException', (player, ...rest) => {
-    // Kazagumo's docs don't clearly specify this event's exact argument shape,
-    // so log everything raw to finally see what's actually being passed.
-    console.error(`[Playback Error] guild ${player?.guildId} | arg count: ${rest.length}`);
-    rest.forEach((arg, i) => {
-      try {
-        console.error(`  arg[${i}]:`, JSON.stringify(arg));
-      } catch {
-        console.error(`  arg[${i}] (unserializable, likely a class instance):`, Object.keys(arg || {}));
-      }
-    });
+  // CONFIRMED shape from live logs: (player, payload) — payload.track / payload.exception.message
+  kazagumo.on('playerException', async (player, payload) => {
+    const failedTrack = payload?.track?.info;
+    const message = payload?.exception?.message || 'unknown error';
+    console.error(`[Playback Error] guild ${player.guildId} | track: ${failedTrack?.title} | reason: ${message}`);
 
-    const channel = client.channels.cache.get(player?.textId);
+    const channel = client.channels.cache.get(player.textId);
+    const isYoutubeFailure = failedTrack?.sourceName === 'youtube';
+
+    // Auto-fallback: if a YouTube track fails (very common right now due to
+    // YouTube's ongoing anti-bot changes breaking Lavalink's decoder), silently
+    // retry the same song via SoundCloud instead of just giving up.
+    if (isYoutubeFailure && failedTrack?.title) {
+      try {
+        const query = `scsearch:${failedTrack.author ? failedTrack.author + ' ' : ''}${failedTrack.title}`;
+        const result = await player.search(query, { requester: player.data.get('lastTrack')?.requester });
+        if (result.tracks.length) {
+          const fallbackTrack = result.tracks[0];
+          player.queue.unshift(fallbackTrack);
+          if (!player.playing && !player.paused) player.play();
+          if (channel) {
+            channel.send({ embeds: [infoEmbed(`⚠️ YouTube failed for **${failedTrack.title}** — retrying via SoundCloud instead.`)] }).catch(() => {});
+          }
+          return;
+        }
+      } catch (err) {
+        console.error('[Fallback] SoundCloud retry also failed:', err.message);
+      }
+    }
+
     if (channel) {
       channel.send({
-        embeds: [infoEmbed(`⚠️ Playback failed on that track. Check the bot's logs for details.`)]
+        embeds: [infoEmbed(`⚠️ Playback failed for **${failedTrack?.title || 'that track'}**: ${message}`)]
       }).catch(() => {});
     }
   });
