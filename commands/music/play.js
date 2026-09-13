@@ -31,9 +31,16 @@ module.exports = {
       });
     }
 
-    const result = await music.search(query, { requester: member.user });
+    let result = await music.search(query, { requester: member.user });
+
+    // If YouTube search itself comes back empty (separate failure point from
+    // playback-time errors, which are handled in musicManager.js), try SoundCloud.
+    if (!result.tracks.length && !query.startsWith('scsearch:')) {
+      result = await music.search(`scsearch:${query}`, { requester: member.user });
+    }
+
     if (!result.tracks.length) {
-      return interaction.editReply({ embeds: [errorEmbed('No results found for that query.')] });
+      return interaction.editReply({ embeds: [errorEmbed('No results found for that query on YouTube or SoundCloud.')] });
     }
 
     if (result.type === 'PLAYLIST') {
