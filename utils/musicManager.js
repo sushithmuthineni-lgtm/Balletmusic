@@ -34,7 +34,13 @@ function createMusicManager(client) {
       }
     },
     new Connectors.DiscordJS(client),
-    config.lavalink
+    config.lavalink,
+    {
+      resume: true,
+      resumeTimeout: 30,
+      reconnectTries: Infinity,   // keep retrying forever instead of giving up
+      reconnectInterval: 10000    // wait 10s between attempts — Lavalink restarts can take 1-2 min to rebuild
+    }
   );
 
   kazagumo.shoukaku.on('ready', (name) => console.log(`[Lavalink] Node "${name}" connected.`));
