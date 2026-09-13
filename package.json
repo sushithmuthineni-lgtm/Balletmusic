@@ -16,7 +16,8 @@
     "dotenv": "^16.4.5",
     "@discordjs/rest": "^2.3.0",
     "discord-api-types": "^0.37.90",
-    "ms": "^2.1.3"
+    "ms": "^2.1.3",
+    "better-sqlite3": "^13.0.3"
   },
   "engines": {
     "node": ">=18.0.0"
