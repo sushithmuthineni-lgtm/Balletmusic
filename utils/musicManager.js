@@ -105,8 +105,10 @@ function createMusicManager(client) {
     // retry the same song via SoundCloud instead of just giving up.
     if (isYoutubeFailure && failedTrack?.title) {
       try {
-        const query = `scsearch:${failedTrack.author ? failedTrack.author + ' ' : ''}${failedTrack.title}`;
-        const result = await player.search(query, { requester: player.data.get('lastTrack')?.requester });
+        const query = `${failedTrack.author ? failedTrack.author + ' ' : ''}${failedTrack.title}`;
+        console.log(`[Fallback] Trying SoundCloud for: "${query}"`);
+        const result = await player.search(query, { requester: player.data.get('lastTrack')?.requester, engine: 'soundcloud' });
+        console.log(`[Fallback] SoundCloud search returned ${result.tracks.length} track(s)`);
         if (result.tracks.length) {
           const fallbackTrack = result.tracks[0];
           player.queue.unshift(fallbackTrack);
