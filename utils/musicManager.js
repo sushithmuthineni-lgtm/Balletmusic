@@ -38,10 +38,16 @@ function createMusicManager(client) {
   );
 
   kazagumo.shoukaku.on('ready', (name) => console.log(`[Lavalink] Node "${name}" connected.`));
-  kazagumo.shoukaku.on('error', (name, error) => console.error(`[Lavalink] Node "${name}" error:`, error));
+  kazagumo.shoukaku.on('error', (name, error) => console.error(`[Lavalink] Node "${name}" error:`, error?.message || error));
   kazagumo.shoukaku.on('close', (name, code, reason) =>
     console.warn(`[Lavalink] Node "${name}" closed. Code ${code}, reason ${reason || 'none'}`)
   );
+  kazagumo.shoukaku.on('disconnect', (name) => console.warn(`[Lavalink] Node "${name}" disconnected — will retry.`));
+
+  setTimeout(() => {
+    const states = [...kazagumo.shoukaku.nodes.values()].map((n) => `${n.name}: ${n.state}`);
+    console.log(`[Lavalink] Node status check (5s after boot): ${states.join(', ') || 'NO NODES CONFIGURED'}`);
+  }, 5000);
 
   // Track end -> autoplay logic
   kazagumo.on('playerEnd', async (player) => {
@@ -77,12 +83,14 @@ function createMusicManager(client) {
     }
   });
 
-  // Empty voice channel handling (respects 24/7)
+  // NOTE: Kazagumo's "playerEmpty" fires when the QUEUE runs out of tracks,
+  // not when the voice channel is empty of people. Real "everyone left"
+  // detection is handled separately in events/voiceStateUpdate.js.
   kazagumo.on('playerEmpty', (player) => {
-    if (stayIn247.has(player.guildId)) return; // don't destroy, stay connected
     const channel = client.channels.cache.get(player.textId);
-    if (channel) channel.send({ embeds: [infoEmbed('Nobody left to listen — leaving the voice channel. Use `/247` to keep me here.')] }).catch(() => {});
-    player.destroy();
+    if (channel) {
+      channel.send({ embeds: [infoEmbed('Queue finished. Add more with `/play`, or I\'ll stay connected idle.')] }).catch(() => {});
+    }
   });
 
   return kazagumo;
