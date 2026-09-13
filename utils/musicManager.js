@@ -91,21 +91,22 @@ function createMusicManager(client) {
 
   // Track playback exceptions (bad stream, blocked format, etc.) were previously
   // silent — the bot would just report "queue finished" as if nothing went wrong.
-  kazagumo.on('playerException', (player, track, payload) => {
-    // Lavalink's exception payload can be nested differently depending on version,
-    // so try every likely shape before giving up.
-    const message =
-      payload?.exception?.message ||
-      payload?.message ||
-      payload?.cause ||
-      payload?.exception?.cause ||
-      JSON.stringify(payload);
+  kazagumo.on('playerException', (player, ...rest) => {
+    // Kazagumo's docs don't clearly specify this event's exact argument shape,
+    // so log everything raw to finally see what's actually being passed.
+    console.error(`[Playback Error] guild ${player?.guildId} | arg count: ${rest.length}`);
+    rest.forEach((arg, i) => {
+      try {
+        console.error(`  arg[${i}]:`, JSON.stringify(arg));
+      } catch {
+        console.error(`  arg[${i}] (unserializable, likely a class instance):`, Object.keys(arg || {}));
+      }
+    });
 
-    console.error(`[Playback Error] guild ${player.guildId} | track: ${track?.title} | raw:`, JSON.stringify(payload));
-    const channel = client.channels.cache.get(player.textId);
+    const channel = client.channels.cache.get(player?.textId);
     if (channel) {
       channel.send({
-        embeds: [infoEmbed(`⚠️ Playback failed for **${track?.title || 'that track'}**: ${message}`)]
+        embeds: [infoEmbed(`⚠️ Playback failed on that track. Check the bot's logs for details.`)]
       }).catch(() => {});
     }
   });
@@ -132,3 +133,5 @@ function createMusicManager(client) {
 }
 
 module.exports = { createMusicManager, stayIn247, autoplayOn, grabInbox };
+
+  
